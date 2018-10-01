@@ -1190,6 +1190,10 @@ public class Web3ImplTest {
         org.junit.Assert.assertNull(account1);
     }
 
+    private Web3Impl createWeb3() {
+        return createWeb3(Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockTransactionPool(), Web3Mocks.getMockBlockStore(), null, null, null);
+    }
+
     @Test
     public void eth_sendTransaction()
     {
@@ -1233,10 +1237,6 @@ public class Web3ImplTest {
         String expectedHash = tx.getHash().toJsonString();
 
         Assert.assertTrue("Method is not creating the expected transaction", expectedHash.compareTo(txHash) == 0);
-    }
-
-    private Web3Impl createWeb3() {
-        return createWeb3(Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockTransactionPool(), Web3Mocks.getMockBlockStore(), null, null, null);
     }
 
     private Web3Impl createWeb3(World world) {

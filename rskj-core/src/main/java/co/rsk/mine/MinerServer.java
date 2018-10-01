@@ -74,4 +74,6 @@ public interface MinerServer {
     long increaseTime(long seconds);
 
     Optional<Block> getLatestBlock();
+
+    Block getBlockToBeMine(Block bestBlock);
 }

@@ -323,12 +323,26 @@ public class RskFactory {
     }
 
     @Bean
-    public EthModuleWallet getEthModuleWallet(Wallet wallet) {
+    public EthModuleWallet getEthModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, TransactionPool transactionPool) {
         if (wallet == null) {
             return new EthModuleWalletDisabled();
         }
 
         return new EthModuleWalletEnabled(wallet);
+    }
+
+    @Bean
+    public EthModuleTransaction getEthModuleTransaction(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool, MinerServer minerServer, MinerClient minerClient, Blockchain blockchain) {
+
+        if (wallet == null) {
+            return new EthModuleTransactionDisabled();
+        }
+
+        if(config.isMinerClientEnabled() &&  config.autoMine()){
+            return new EthModuleTransactionInstant(config, eth, wallet, transactionPool, minerServer, minerClient, blockchain);
+        }
+
+        return new EthModuleTransactionEnabled(config, eth, wallet, transactionPool);
     }
 
     @Bean
@@ -340,15 +354,6 @@ public class RskFactory {
             logger.debug("Solidity compiler unavailable", e);
             return new EthModuleSolidityDisabled();
         }
-    }
-
-    @Bean
-    public EthModuleTransaction getEthModuleTransaction(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool) {
-        if (wallet == null) {
-            return new EthModuleTransactionDisabled();
-        }
-
-        return new EthModuleTransactionEnabled(config, eth, wallet, transactionPool);
     }
 
     @Bean
