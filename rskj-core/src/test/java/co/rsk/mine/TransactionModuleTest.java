@@ -114,7 +114,7 @@ public class TransactionModuleTest {
 
         Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, tx);
 
-        //Transaction tx is in the block mined.
+        //Transaction tx must be in the block mined.
         Assert.assertEquals(tx, txInBlock.getHash().toJsonString());
     }
 
@@ -168,7 +168,7 @@ public class TransactionModuleTest {
 
     private Web3.CallArguments getTransactionParameters(Web3Impl web3, Repository repository) {
         RskAddress addr1 = new RskAddress(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getAddress());
-        String addr2 = web3.personal_newAccountWithSeed("sampleSeed2" + new Random().toString());
+        String addr2 = web3.personal_newAccountWithSeed("addr2");
         BigInteger value = BigInteger.valueOf(7);
         BigInteger gasPrice = BigInteger.valueOf(8);
         BigInteger gasLimit = BigInteger.valueOf(50000);
