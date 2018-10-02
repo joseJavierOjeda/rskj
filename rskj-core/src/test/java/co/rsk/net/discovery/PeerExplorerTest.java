@@ -66,7 +66,7 @@ public class PeerExplorerTest {
     public void sendInitialMessageToNodesNoNodes() {
         Node node = new Node(new ECKey().getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node);
-        PeerExplorer peerExplorer = getPeerExplorer(node, distanceTable);
+        PeerExplorer peerExplorer = new PeerExplorer(new ArrayList<>(), node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
 
         peerExplorer.setUDPChannel(Mockito.mock(UDPChannel.class));
 
@@ -81,11 +81,6 @@ public class PeerExplorerTest {
 
         Assert.assertTrue(CollectionUtils.isEmpty(nodesWithMessage));
     }
-
-    public static PeerExplorer getPeerExplorer(Node node, NodeDistanceTable distanceTable) {
-        return new PeerExplorer(new ArrayList<>(), node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
-    }
-
 
     @Test
     public void sendInitialMessageToNodes() {

@@ -22,8 +22,8 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
+import com.sun.xml.internal.bind.v2.TODO;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
@@ -32,9 +32,7 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.math.BigInteger;
-
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 public class EthModuleTransactionInstant implements EthModuleTransaction {
@@ -84,9 +82,8 @@ public class EthModuleTransactionInstant implements EthModuleTransaction {
 
             Block newBlock = minerServer.getBlockToBeMine(blockchain.getBestBlock());
 
-            //Check if the transaction was send could get in the block
+            //Check if the transaction which was send could get in the block
             Transaction txInBlock = null;
-
             for (Transaction x : newBlock.getTransactionsList()) {
                 if (x.getHash().toJsonString().equals(s)) {
                     txInBlock = x;
@@ -94,7 +91,8 @@ public class EthModuleTransactionInstant implements EthModuleTransaction {
                 }
             }
 
-            //if transction is in block, let mined next block, otherwise don't mine it.
+            //AutoMine setting should mine the block if the transaction is in the block
+            //TODO: what should we do if transaction is not in the block for some reason ?
             if(txInBlock != null){
                 minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
                 minerClient.mineBlock();
