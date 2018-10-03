@@ -21,6 +21,8 @@ package co.rsk.core;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.mine.MinerClientImpl;
+import co.rsk.mine.MinerClientInstantImpl;
 import co.rsk.rpc.*;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
@@ -332,14 +334,23 @@ public class RskFactory {
     }
 
     @Bean
-    public EthModuleTransaction getEthModuleTransaction(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool, MinerServer minerServer, MinerClient minerClient, Blockchain blockchain) {
+    public MinerClient getMinerClient(RskSystemProperties config, Rsk rsk, MinerServer minerServer) {
+        if (config.autoMine()) {
+            new MinerClientInstantImpl(minerServer);
+        }
+
+        return new MinerClientImpl(rsk, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
+    }
+
+    @Bean
+    public EthModuleTransaction getEthModuleTransaction(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool, MinerServer minerServer, MinerClient minerClient, Blockchain blockchain, ReversibleTransactionExecutor reversibleTransactionExecutor) {
 
         if (wallet == null) {
             return new EthModuleTransactionDisabled();
         }
 
         if(config.isMinerClientEnabled() &&  config.autoMine()){
-            return new EthModuleTransactionInstant(config, eth, wallet, transactionPool, minerServer, minerClient, blockchain);
+            return new EthModuleTransactionInstant(config, eth, wallet, transactionPool, minerServer, minerClient, blockchain, reversibleTransactionExecutor);
         }
 
         return new EthModuleTransactionEnabled(config, eth, wallet, transactionPool);

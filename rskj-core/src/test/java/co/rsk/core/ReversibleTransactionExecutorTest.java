@@ -30,7 +30,6 @@ import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
-
 import java.math.BigInteger;
 
 public class ReversibleTransactionExecutorTest {
@@ -60,7 +59,8 @@ public class ReversibleTransactionExecutorTest {
                 contract.getAddress(),
                 value,
                 helloFn.encode(),
-                from
+                from,
+                null
         );
 
         Assert.assertNull(result.getException());
@@ -108,7 +108,8 @@ public class ReversibleTransactionExecutorTest {
                 contract.getAddress(),
                 value,
                 greeterFn.encode("greet me"),
-                from
+                from,
+                null
         );
 
         Assert.assertTrue(result.isRevert());
@@ -135,7 +136,8 @@ public class ReversibleTransactionExecutorTest {
                 contract.getAddress(),
                 value,
                 callsFn.encodeSignature(),
-                from
+                from,
+                null
         );
 
         Assert.assertNull(result.getException());
@@ -151,7 +153,8 @@ public class ReversibleTransactionExecutorTest {
                 contract.getAddress(),
                 value,
                 callsFn.encodeSignature(),
-                from
+                from,
+                null
         );
 
         Assert.assertNull(result2.getException());

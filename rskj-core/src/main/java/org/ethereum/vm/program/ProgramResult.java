@@ -56,6 +56,7 @@ public class ProgramResult {
      * but dummy recorded
      */
     private List<CallCreate> callCreateList;
+    private boolean isASuccessProgram = false;
 
     public void clearUsedGas() {
         gasUsed = 0;
@@ -98,6 +99,10 @@ public class ProgramResult {
         this.exception = exception;
     }
 
+    //We need a way to say hey transaction looks good and it is okay to add it in a block
+    public boolean programSuccess(){ return isASuccessProgram; }
+
+    public void setProgramResult(boolean isASuccessProgram){ this.isASuccessProgram = isASuccessProgram; }
 
     public Set<DataWord> getDeleteAccounts() {
         if (deleteAccounts == null) {

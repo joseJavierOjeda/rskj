@@ -19,6 +19,7 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.mine.MinerClient;
@@ -29,7 +30,9 @@ import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.vm.GasCost;
+import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
@@ -46,8 +49,9 @@ public class EthModuleTransactionInstant implements EthModuleTransaction {
     private final MinerServer minerServer;
     private final MinerClient minerClient;
     private final Blockchain blockchain;
+    private final ReversibleTransactionExecutor reversibleTransactionExecutor;
 
-    public EthModuleTransactionInstant(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool, MinerServer minerServer, MinerClient minerClient, Blockchain blockchain) {
+    public EthModuleTransactionInstant(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool, MinerServer minerServer, MinerClient minerClient, Blockchain blockchain, ReversibleTransactionExecutor reversibleTransactionExecutor) {
         this.config = config;
         this.eth = eth;
         this.wallet = wallet;
@@ -55,6 +59,8 @@ public class EthModuleTransactionInstant implements EthModuleTransaction {
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.blockchain = blockchain;
+        this.reversibleTransactionExecutor = reversibleTransactionExecutor;
+        this.reversibleTransactionExecutor.setLocalCall(false);
     }
 
     @Override
@@ -72,30 +78,36 @@ public class EthModuleTransactionInstant implements EthModuleTransaction {
                 args.data = args.data.substring(2);
             }
 
+            Transaction tx;
+
             synchronized (transactionPool) {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
-                Transaction tx = Transaction.create(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
+                tx = Transaction.create(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
                 tx.sign(account.getEcKey().getPrivKeyBytes());
                 eth.submitTransaction(tx.toImmutableTransaction());
                 s = tx.getHash().toJsonString();
             }
 
-            Block newBlock = minerServer.getBlockToBeMine(blockchain.getBestBlock());
+            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
 
-            //Check if the transaction which was send could get in the block
-            Transaction txInBlock = null;
-            for (Transaction x : newBlock.getTransactionsList()) {
-                if (x.getHash().toJsonString().equals(s)) {
-                    txInBlock = x;
-                    break;
-                }
-            }
 
-            //AutoMine setting should mine the block if the transaction is in the block
-            //TODO: what should we do if transaction is not in the block for some reason ?
-            if(txInBlock != null){
+            ProgramResult txResult = reversibleTransactionExecutor.executeTransaction(
+                    blockchain.getBestBlock(),
+                    blockchain.getBestBlock().getCoinbase(),
+                    hexArgs.getGasPrice(),
+                    hexArgs.getGasLimit(),
+                    hexArgs.getToAddress(),
+                    hexArgs.getValue(),
+                    hexArgs.getData(),
+                    hexArgs.getFromAddress(),
+                    hexArgs.getNonce()
+            );
+
+            if(txResult.programSuccess()){
                 minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
                 minerClient.mineBlock();
+            }else{
+                //TODO: What should we do if was not success
             }
 
             return s;

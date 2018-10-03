@@ -578,15 +578,6 @@ public class MinerServerImpl implements MinerServer {
     }
 
     /**
-     * This method creates a block to mine based on the given block as parent.
-     * B
-     */
-    @Override
-    public Block getBlockToBeMine(@Nonnull Block newBlockParent) {
-        return builder.build(newBlockParent, extraData);
-    }
-
-    /**
      * buildBlockToMine creates a block to mine based on the given block as parent.
      *
      * @param newBlockParent         the new block parent.

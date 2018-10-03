@@ -21,6 +21,8 @@ package org.ethereum.rpc.converters;
 import co.rsk.core.RskAddress;
 import org.ethereum.rpc.Web3;
 
+import java.math.BigInteger;
+
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 /**
@@ -41,6 +43,10 @@ public class CallArgumentsToByteArray {
         }
 
         return gasPrice;
+    }
+
+    public byte[] getNonce() {
+        return new BigInteger(args.nonce).toByteArray();
     }
 
     public byte[] getGasLimit() {

@@ -56,6 +56,7 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.sync.SyncPool;
+import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
@@ -63,7 +64,6 @@ import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.Random;
 
 public class TransactionModuleTest {
     Wallet wallet;
@@ -71,17 +71,16 @@ public class TransactionModuleTest {
 
     @Test
     public void sendTransactionMustNotBeMined() {
-        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        World world = new World(receiptStore);
+        World world = new World();
         BlockChainImpl blockchain = world.getBlockChain();
 
         Repository repository = world.getRepository();
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, null, 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, null, null, null, 10, 100);
 
-        Web3Impl web3 = createEnvironment(blockchain, receiptStore, repository, transactionPool, blockStore, false);
+        Web3Impl web3 = createEnvironment(blockchain, null, repository, transactionPool, blockStore, false);
 
         String tx = sendTransaction(web3, repository);
 
@@ -95,17 +94,16 @@ public class TransactionModuleTest {
 
     @Test
     public void sendTransactionMustBeMined() {
-        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        World world = new World(receiptStore);
+        World world = new World();
         BlockChainImpl blockchain = world.getBlockChain();
 
-        Repository repository = world.getRepository();
+        Repository repository = blockchain.getRepository();
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, null, 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, null, null, null, 10, 100);
 
-        Web3Impl web3 = createEnvironment(blockchain, receiptStore, repository, transactionPool, blockStore, true);
+        Web3Impl web3 = createEnvironment(blockchain, null, repository, transactionPool, blockStore, true);
 
         String tx = sendTransaction(web3, repository);
 
@@ -118,9 +116,35 @@ public class TransactionModuleTest {
         Assert.assertEquals(tx, txInBlock.getHash().toJsonString());
     }
 
+
+    @Test
+    public void sendSameTransactionShouldnotBeInBlockSecondTime() {
+        World world = new World();
+        BlockChainImpl blockchain = world.getBlockChain();
+
+        Repository repository = blockchain.getRepository();
+
+        BlockStore blockStore = world.getBlockChain().getBlockStore();
+
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, null, null, null, 10, 100);
+
+        Web3Impl web3 = createEnvironment(blockchain, null, repository, transactionPool, blockStore, true);
+
+        String tx = sendTransactionWithASpecificNonce(web3, repository, "0");
+
+        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assert.assertEquals(2, blockchain.getBestBlock().getTransactionsList().size());
+        //Transaction tx must be in the block mined.
+        Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, tx);
+        Assert.assertEquals(tx, txInBlock.getHash().toJsonString());
+
+        //Again,send same transaction mustn't mine a block
+        sendTransactionWithASpecificNonce(web3, repository, "0");
+        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+    }
+
     /**
      * This test send a several transactions, and should be mine 1 transaction in each block.
-     *
      */
     @Test
     public void sendSeveralTransactionsWithAutoMining() {
@@ -129,7 +153,7 @@ public class TransactionModuleTest {
         World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
 
-        Repository repository = world.getRepository();
+        Repository repository = blockchain.getRepository();
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
@@ -137,7 +161,7 @@ public class TransactionModuleTest {
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, repository, transactionPool, blockStore, true);
 
-        for(int i = 1; i < 100; i++) {
+        for (int i = 1; i < 100; i++) {
             String tx = sendTransaction(web3, repository);
             Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, tx);
 
@@ -166,6 +190,15 @@ public class TransactionModuleTest {
         return web3.eth_sendTransaction(args);
     }
 
+    private String sendTransactionWithASpecificNonce(Web3Impl web3, Repository repository, String nonce) {
+
+        Web3.CallArguments args = getTransactionParameters(web3, repository);
+
+        args.nonce = nonce;
+
+        return web3.eth_sendTransaction(args);
+    }
+
     private Web3.CallArguments getTransactionParameters(Web3Impl web3, Repository repository) {
         RskAddress addr1 = new RskAddress(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getAddress());
         String addr2 = web3.personal_newAccountWithSeed("addr2");
@@ -190,7 +223,7 @@ public class TransactionModuleTest {
 
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
         CompositeEthereumListener compositeEthereumListener = new CompositeEthereumListener();
-        Ethereum eth = new EthereumImpl(config, new ChannelManagerImpl(config, new SyncPool(compositeEthereumListener, blockchain, config,null)), transactionPool, compositeEthereumListener, blockchain);
+        Ethereum eth = new EthereumImpl(config, new ChannelManagerImpl(config, new SyncPool(compositeEthereumListener, blockchain, config, null)), transactionPool, compositeEthereumListener, blockchain);
 
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -215,20 +248,20 @@ public class TransactionModuleTest {
 
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
-        ReversibleTransactionExecutor executor = Mockito.mock(ReversibleTransactionExecutor.class);
-        ProgramResult res = new ProgramResult();
-        res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
-        Mockito.when(executor.executeTransaction(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(res);
+//        ReversibleTransactionExecutor executor = Mockito.mock(ReversibleTransactionExecutor.class);
 
-        MinerClient minerClient = new MinerClientImpl(null, minerServer, config);
+        MinerClient minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
         EthModuleTransaction transactionModule = null;
+
+        ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(config, repository, blockStore, receiptStore, null);
+
         if (mineInstant) {
-            transactionModule = new EthModuleTransactionInstant(config, eth, wallet, transactionPool, minerServer, minerClient, blockchain);
+            transactionModule = new EthModuleTransactionInstant(config, eth, wallet, transactionPool, minerServer, minerClient, blockchain, reversibleTransactionExecutor1);
         } else {
             transactionModule = new EthModuleTransactionEnabled(config, eth, wallet, transactionPool);
         }
 
-        EthModule ethModule = new EthModule(config, blockchain, executor, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule);
+        EthModule ethModule = new EthModule(config, blockchain, reversibleTransactionExecutor1, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
 
