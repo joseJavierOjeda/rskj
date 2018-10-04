@@ -336,7 +336,7 @@ public class RskFactory {
     @Bean
     public MinerClient getMinerClient(RskSystemProperties config, Rsk rsk, MinerServer minerServer) {
         if (config.autoMine()) {
-            new MinerClientInstantImpl(minerServer);
+           return new MinerClientInstantImpl(minerServer);
         }
 
         return new MinerClientImpl(rsk, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
