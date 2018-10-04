@@ -144,7 +144,7 @@ public class EthModule
                 hexArgs.getValue(),
                 hexArgs.getData(),
                 hexArgs.getFromAddress(),
-                null
+                new byte[]{}
         );
     }
 }

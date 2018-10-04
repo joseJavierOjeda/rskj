@@ -48,7 +48,7 @@ public class EthModuleTest {
                 .thenReturn(hreturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(executionBlock), any(), any(), any(), any(), any(), any(), any(), null))
+        when(executor.executeTransaction(eq(executionBlock), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
         EthModule eth = new EthModule(

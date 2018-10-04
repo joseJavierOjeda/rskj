@@ -73,7 +73,7 @@ public class ReversibleTransactionExecutor {
             byte[] nonce) {
         Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
 
-        if(nonce.equals(null)){
+        if(nonce.equals(new byte[]{})){
             nonce = repository.getNonce(fromAddress).toByteArray();
         }
 

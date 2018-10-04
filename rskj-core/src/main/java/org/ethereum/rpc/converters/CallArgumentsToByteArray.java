@@ -46,7 +46,11 @@ public class CallArgumentsToByteArray {
     }
 
     public byte[] getNonce() {
-        return new BigInteger(args.nonce).toByteArray();
+        if (args.gas != null && args.gas.length() != 0 ) {
+            return new BigInteger(args.nonce).toByteArray();
+        }
+
+        return new BigInteger("0").toByteArray();
     }
 
     public byte[] getGasLimit() {

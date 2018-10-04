@@ -60,7 +60,7 @@ public class ReversibleTransactionExecutorTest {
                 value,
                 helloFn.encode(),
                 from,
-                null
+                new byte[]{}
         );
 
         Assert.assertNull(result.getException());
@@ -109,7 +109,7 @@ public class ReversibleTransactionExecutorTest {
                 value,
                 greeterFn.encode("greet me"),
                 from,
-                null
+                new byte[]{}
         );
 
         Assert.assertTrue(result.isRevert());
@@ -137,7 +137,7 @@ public class ReversibleTransactionExecutorTest {
                 value,
                 callsFn.encodeSignature(),
                 from,
-                null
+                new byte[]{}
         );
 
         Assert.assertNull(result.getException());
@@ -154,7 +154,7 @@ public class ReversibleTransactionExecutorTest {
                 value,
                 callsFn.encodeSignature(),
                 from,
-                null
+                new byte[]{}
         );
 
         Assert.assertNull(result2.getException());
