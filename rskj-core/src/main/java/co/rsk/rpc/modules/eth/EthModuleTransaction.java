@@ -21,4 +21,5 @@ import org.ethereum.rpc.Web3;
 
 public interface EthModuleTransaction {
     String sendTransaction(Web3.CallArguments args);
+    String sendRawTransaction(String rawData);
 }

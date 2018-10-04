@@ -23,11 +23,13 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Account;
+import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +79,28 @@ public class EthModuleTransactionEnabled implements EthModuleTransaction {
             return s;
         } finally {
             LOGGER.debug("eth_sendTransaction({}): {}", args, s);
+        }
+    }
+
+    @Override
+    public String sendRawTransaction(String rawData){
+        String s = null;
+        try {
+            Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
+
+            if (null == tx.getGasLimit()
+                    || null == tx.getGasPrice()
+                    || null == tx.getValue()) {
+                throw new JsonRpcInvalidParamException("Missing parameter, gasPrice, gas or value");
+            }
+
+            eth.submitTransaction(tx);
+
+            return s = tx.getHash().toJsonString();
+        } finally {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("eth_sendRawTransaction({}): {}", rawData, s);
+            }
         }
     }
 }

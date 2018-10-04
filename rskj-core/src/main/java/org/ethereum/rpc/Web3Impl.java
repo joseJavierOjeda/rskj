@@ -547,28 +547,6 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    @Override
-    public String eth_sendRawTransaction(String rawData) throws Exception {
-        String s = null;
-        try {
-            Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
-
-            if (null == tx.getGasLimit()
-                    || null == tx.getGasPrice()
-                    || null == tx.getValue()) {
-                throw new JsonRpcInvalidParamException("Missing parameter, gasPrice, gas or value");
-            }
-
-            eth.submitTransaction(tx);
-
-            return s = tx.getHash().toJsonString();
-        } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug("eth_sendRawTransaction({}): {}", rawData, s);
-            }
-        }
-    }
-
     public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
         BlockInformationResult bir = new BlockInformationResult();
         bir.hash = TypeConverter.toJsonHex(blockInformation.getHash());

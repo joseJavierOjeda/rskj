@@ -31,6 +31,7 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
+import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -88,31 +89,52 @@ public class EthModuleTransactionInstant implements EthModuleTransaction {
                 s = tx.getHash().toJsonString();
             }
 
-            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-
-
-            ProgramResult txResult = reversibleTransactionExecutor.executeTransaction(
-                    blockchain.getBestBlock(),
-                    blockchain.getBestBlock().getCoinbase(),
-                    hexArgs.getGasPrice(),
-                    hexArgs.getGasLimit(),
-                    hexArgs.getToAddress(),
-                    hexArgs.getValue(),
-                    hexArgs.getData(),
-                    hexArgs.getFromAddress(),
-                    hexArgs.getNonce()
-            );
-
-            if(txResult.programSuccess()){
-                minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-                minerClient.mineBlock();
-            }else{
-                //TODO: What should we do if was not success
-            }
+            mineTransactionIsItValid(tx);
 
             return s;
         } finally {
             LOGGER.debug("eth_sendTransaction({}): {}", args, s);
         }
     }
+
+    @Override
+    public String sendRawTransaction(String rawData){
+        String s = null;
+        try {
+            Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
+
+            if (null == tx.getGasLimit()
+                    || null == tx.getGasPrice()
+                    || null == tx.getValue()) {
+                throw new JsonRpcInvalidParamException("Missing parameter, gasPrice, gas or value");
+            }
+
+            eth.submitTransaction(tx);
+
+            mineTransactionIsItValid(tx);
+
+            return s = tx.getHash().toJsonString();
+        } finally {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("eth_sendRawTransaction({}): {}", rawData, s);
+            }
+        }
+    }
+
+    private void mineTransactionIsItValid(Transaction tx) {
+
+        ProgramResult txResult = reversibleTransactionExecutor.executeTransaction(
+                blockchain.getBestBlock(),
+                blockchain.getBestBlock().getCoinbase(),
+                tx
+        );
+
+        if(txResult.programSuccess()){
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            minerClient.mineBlock();
+        }else{
+            //TODO: What should we do if was not success
+        }
+    }
+
 }

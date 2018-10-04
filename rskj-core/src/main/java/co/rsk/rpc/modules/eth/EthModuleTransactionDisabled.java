@@ -32,4 +32,10 @@ public class EthModuleTransactionDisabled implements EthModuleTransaction {
         LOGGER.debug("eth_sendTransaction({}): {}", args, null);
         throw new JsonRpcInvalidParamException("Local wallet is disabled in this node");
     }
+
+    @Override
+    public String sendRawTransaction(String rawData) {
+        LOGGER.debug("eth_sendRawTransaction({}): {}", rawData, null);
+        throw new JsonRpcInvalidParamException("Local wallet is disabled in this node");
+    }
 }

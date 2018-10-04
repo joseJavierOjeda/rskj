@@ -128,6 +128,10 @@ public class EthModule
         return ethModuleTransaction.sendTransaction(args);
     }
 
+    public String sendRawTransaction(String rawData) {
+        return ethModuleTransaction.sendRawTransaction(rawData);
+    }
+
     @Override
     public String sign(String addr, String data) {
         return ethModuleWallet.sign(addr, data);

@@ -64,6 +64,15 @@ public class ReversibleTransactionExecutor {
     public ProgramResult executeTransaction(
             Block executionBlock,
             RskAddress coinbase,
+            Transaction tx) {
+
+        return this.executeTransaction(executionBlock, coinbase, tx.getGasPrice().getBytes(), tx.getGasLimit(),
+                tx.getReceiveAddress().getBytes(), tx.getValue().getBytes(), tx.getData(), tx.getSender(), tx.getNonce());
+    }
+
+    public ProgramResult executeTransaction(
+            Block executionBlock,
+            RskAddress coinbase,
             byte[] gasPrice,
             byte[] gasLimit,
             byte[] toAddress,

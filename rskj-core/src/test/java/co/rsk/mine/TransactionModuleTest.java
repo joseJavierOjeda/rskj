@@ -32,8 +32,12 @@ import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.test.World;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Account;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
@@ -51,10 +55,12 @@ import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.ChannelManagerImpl;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
+import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
+import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.ProgramResult;
@@ -169,6 +175,72 @@ public class TransactionModuleTest {
             Assert.assertEquals(2, blockchain.getBestBlock().getTransactionsList().size());
             Assert.assertEquals(tx, txInBlock.getHash().toJsonString());
         }
+    }
+
+    @Test
+    public void sendRawTransactionWithAutoMining() throws Exception  {
+
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+        BlockChainImpl blockchain = world.getBlockChain();
+
+        Repository repository = blockchain.getRepository();
+
+        BlockStore blockStore = world.getBlockChain().getBlockStore();
+
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, null, 10, 100);
+
+        Web3Impl web3 = createEnvironment(blockchain, receiptStore, repository, transactionPool, blockStore, true);
+
+        String txHash = sendRawTransaction(web3);
+
+        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assert.assertEquals(2, blockchain.getBestBlock().getTransactionsList().size());
+
+        Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, txHash);
+
+        //Transaction tx must be in the block mined.
+        Assert.assertEquals(txHash, txInBlock.getHash().toJsonString());
+    }
+
+    @Test
+    public void sendRawTransactionWithoutAutoMining() {
+
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+        BlockChainImpl blockchain = world.getBlockChain();
+
+        Repository repository = blockchain.getRepository();
+
+        BlockStore blockStore = world.getBlockChain().getBlockStore();
+
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, null, 10, 100);
+
+        Web3Impl web3 = createEnvironment(blockchain, receiptStore, repository, transactionPool, blockStore, false);
+
+        String txHash = sendRawTransaction(web3);
+
+        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assert.assertEquals(1,  transactionPool.getPendingTransactions().size());
+        Assert.assertEquals(txHash,  transactionPool.getPendingTransactions().get(0).getHash().toJsonString());
+    }
+
+    private String sendRawTransaction(Web3Impl web3) {
+        Account sender = new AccountBuilder().name("cow").build();
+        Account receiver = new AccountBuilder().name("addr2").build();
+
+        Transaction tx = new TransactionBuilder()
+                .sender(sender)
+                .receiver(receiver)
+                .gasPrice(BigInteger.valueOf(8))
+                .gasLimit(BigInteger.valueOf(50000))
+                .value(BigInteger.valueOf(7))
+                .nonce(0)
+                .build();
+
+        String rawData = Hex.toHexString(tx.getEncoded());
+
+        return web3.eth_sendRawTransaction(rawData);
     }
 
     private Transaction getTransactionFromBlockWhichWasSend(BlockChainImpl blockchain, String tx) {
