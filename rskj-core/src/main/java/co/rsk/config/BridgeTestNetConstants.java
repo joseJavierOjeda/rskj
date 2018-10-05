@@ -23,7 +23,6 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
-import com.google.common.collect.Lists;
 import org.ethereum.crypto.ECKey;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -46,11 +45,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
          BtcECKey federator5PublicKey = BtcECKey.fromPublicOnly(Hex.decode("033965f98e9ec741fdd3281f5cf2a2a0ae89958f4bf4f6862ee73ac9bf2b49e0c7"));
          BtcECKey federator6PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0297d72f4c58b62495adbd49398b39d8fca69c6714ecaec49bd09e9dfcd9dc35cf"));
 
-        List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
-                federator0PublicKey, federator1PublicKey, federator2PublicKey,
-                federator3PublicKey, federator4PublicKey, federator5PublicKey,
-                federator6PublicKey
-        );
+        List<BtcECKey> genesisFederationPublicKeys = Arrays.asList(federator0PublicKey, federator1PublicKey, federator2PublicKey, federator3PublicKey);
 
         // Currently set to:
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
